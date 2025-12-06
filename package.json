@@ -35,12 +35,12 @@
     "quality:fix": "npm run lint && npm run format && npm run typecheck"
   },
   "keywords": [
-    "http",
-    "proxy",
-    "monitor",
     "debugging",
+    "http",
+    "man-in-the-middle",
     "mitm",
-    "man-in-the-middle"
+    "monitor",
+    "proxy"
   ],
   "author": "",
   "license": "MIT",
@@ -49,6 +49,8 @@
     "@types/node": "^22.10.1",
     "eslint": "^9.16.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsonc": "^2.18.2",
+    "eslint-plugin-yml": "^1.16.0",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
