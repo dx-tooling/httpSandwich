@@ -1,5 +1,6 @@
 import { type TerminalUI, type TerminalSize, type Address, type DetailLevel } from "@/domain";
 import { AnsiColors } from "@/infrastructure/color-scheme.js";
+import { type ScrollState } from "./screen-renderer.js";
 
 /**
  * Layout regions for the TUI.
@@ -67,15 +68,32 @@ export class TuiLayout {
   }
 
   /**
-   * Render the footer with controls and status.
+   * Render the footer with controls, status, and scroll info.
    */
-  public renderFooter(exchangeCount: number, historyCapacity: number, storagePath: string): void {
+  public renderFooter(
+    exchangeCount: number,
+    historyCapacity: number,
+    storagePath: string,
+    scrollState?: ScrollState
+  ): void {
     const regions = this.getRegions();
 
     this.terminal.moveCursor(regions.footerRow, 1);
     this.terminal.clearLine();
 
-    const controls = `${AnsiColors.dim}+/- level • q quit • ${String(exchangeCount)}/${String(historyCapacity)} requests • ${storagePath}${AnsiColors.reset}`;
+    // Build scroll indicator
+    let scrollIndicator = "";
+    if (scrollState !== undefined && scrollState.totalLines > 0) {
+      if (scrollState.mode === "manual") {
+        scrollIndicator = `${AnsiColors.bold}[SCROLL]${AnsiColors.reset} ${String(scrollState.firstLine)}-${String(scrollState.lastLine)}/${String(scrollState.totalLines)} • `;
+      }
+    }
+
+    // Build controls hint based on mode
+    const modeHint = scrollState?.mode === "manual" ? "ESC tail • ↑↓ scroll • " : "↑↓ scroll • ";
+
+    const controls = `${AnsiColors.dim}${scrollIndicator}${modeHint}+/- level • q quit • ${String(exchangeCount)}/${String(historyCapacity)} requests • ${storagePath}${AnsiColors.reset}`;
+
     // Truncate if too long
     const maxLen = regions.width - 1;
     const truncated =

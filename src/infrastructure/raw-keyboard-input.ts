@@ -5,12 +5,16 @@ import { type KeyboardInput, type KeyPressHandler } from "@/domain/ports/keyboar
  */
 const KEYS = {
   CTRL_C: "\x03",
+  ESCAPE: "\x1b",
   PLUS: "+",
   EQUALS: "=", // Also treated as plus (same key without shift)
   MINUS: "-",
   UNDERSCORE: "_", // Also treated as minus (same key with shift)
   Q_LOWER: "q",
   Q_UPPER: "Q",
+  // Arrow keys send ANSI escape sequences
+  ARROW_UP: "\x1b[A",
+  ARROW_DOWN: "\x1b[B",
 };
 
 /**
@@ -20,6 +24,9 @@ export const NormalizedKeys = {
   INCREMENT: "increment",
   DECREMENT: "decrement",
   QUIT: "quit",
+  SCROLL_UP: "scroll_up",
+  SCROLL_DOWN: "scroll_down",
+  ESCAPE: "escape",
 } as const;
 
 export type NormalizedKey = (typeof NormalizedKeys)[keyof typeof NormalizedKeys];
@@ -100,6 +107,15 @@ export class RawKeyboardInput implements KeyboardInput {
       case KEYS.Q_UPPER:
       case KEYS.CTRL_C:
         return NormalizedKeys.QUIT;
+
+      case KEYS.ARROW_UP:
+        return NormalizedKeys.SCROLL_UP;
+
+      case KEYS.ARROW_DOWN:
+        return NormalizedKeys.SCROLL_DOWN;
+
+      case KEYS.ESCAPE:
+        return NormalizedKeys.ESCAPE;
 
       default:
         return null;

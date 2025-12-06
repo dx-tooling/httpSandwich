@@ -16,5 +16,10 @@ export {
   type FormattedExchange,
 } from "./services/exchange-formatter.js";
 export { ExchangeHistory, type ExchangeAddedHandler } from "./services/exchange-history.js";
-export { ScreenRenderer, type ScreenRendererConfig } from "./services/screen-renderer.js";
+export {
+  ScreenRenderer,
+  type ScreenRendererConfig,
+  type ScrollMode,
+  type ScrollState,
+} from "./services/screen-renderer.js";
 export { TuiLayout, type LayoutRegions } from "./services/tui-layout.js";

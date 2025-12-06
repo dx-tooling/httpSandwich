@@ -233,4 +233,126 @@ describe("ScreenRenderer", () => {
       expect(allText).toContain("/api/19");
     });
   });
+
+  describe("scroll navigation", () => {
+    beforeEach(() => {
+      renderer = createRenderer(DetailLevel.of(3));
+      terminal.setSize(10, 80); // Small terminal for scroll testing
+
+      // Add many exchanges to ensure scrollable content
+      for (let i = 0; i < 30; i++) {
+        history.add(
+          createTestExchange({
+            path: `/api/${String(i)}`,
+          })
+        );
+      }
+      renderer.initialize();
+    });
+
+    it("should start in auto-scroll mode", () => {
+      expect(renderer.isManualScrollMode()).toBe(false);
+    });
+
+    it("should enter manual scroll mode on scrollUp", () => {
+      renderer.scrollUp();
+      expect(renderer.isManualScrollMode()).toBe(true);
+    });
+
+    it("should show older content when scrolling up", () => {
+      terminal.clear();
+      renderer.scrollUp();
+      renderer.scrollUp();
+      renderer.scrollUp();
+
+      const allText = terminal.writtenText.join("");
+      // Should no longer show the very newest exchange
+      expect(allText).not.toContain("/api/29");
+    });
+
+    it("should return to auto mode when scrolling back to bottom", () => {
+      renderer.scrollUp();
+      renderer.scrollUp();
+      expect(renderer.isManualScrollMode()).toBe(true);
+
+      renderer.scrollDown();
+      renderer.scrollDown();
+      expect(renderer.isManualScrollMode()).toBe(false);
+    });
+
+    it("should reset to auto mode on resetScroll", () => {
+      renderer.scrollUp();
+      renderer.scrollUp();
+      expect(renderer.isManualScrollMode()).toBe(true);
+
+      renderer.resetScroll();
+      expect(renderer.isManualScrollMode()).toBe(false);
+    });
+
+    it("should show newest content after resetScroll", () => {
+      renderer.scrollUp();
+      renderer.scrollUp();
+      renderer.scrollUp();
+      terminal.clear();
+
+      renderer.resetScroll();
+
+      const allText = terminal.writtenText.join("");
+      expect(allText).toContain("/api/29");
+    });
+
+    it("should not scroll past the beginning", () => {
+      // Scroll up many times
+      for (let i = 0; i < 100; i++) {
+        renderer.scrollUp();
+      }
+
+      terminal.clear();
+      renderer.redraw();
+
+      const allText = terminal.writtenText.join("");
+      // Should show the oldest exchange
+      expect(allText).toContain("/api/0");
+    });
+
+    it("should not enter manual mode when already at bottom and scrollDown is called", () => {
+      expect(renderer.isManualScrollMode()).toBe(false);
+      renderer.scrollDown();
+      expect(renderer.isManualScrollMode()).toBe(false);
+    });
+
+    it("should show scroll indicator in footer when in manual mode", () => {
+      terminal.clear();
+      renderer.scrollUp();
+
+      const allText = terminal.writtenText.join("");
+      expect(allText).toContain("[SCROLL]");
+    });
+
+    it("should not show scroll indicator when in auto mode", () => {
+      renderer.initialize();
+
+      const allText = terminal.writtenText.join("");
+      expect(allText).not.toContain("[SCROLL]");
+    });
+
+    it("should provide scroll state with correct values", () => {
+      renderer.scrollUp();
+      renderer.scrollUp();
+
+      const state = renderer.getScrollState();
+      expect(state.mode).toBe("manual");
+      expect(state.totalLines).toBeGreaterThan(0);
+      expect(state.firstLine).toBeLessThan(state.lastLine);
+    });
+
+    it("should reset scroll when detail level changes", () => {
+      renderer.scrollUp();
+      renderer.scrollUp();
+      expect(renderer.isManualScrollMode()).toBe(true);
+
+      renderer.incrementLevel();
+      expect(renderer.isManualScrollMode()).toBe(false);
+    });
+  });
 });

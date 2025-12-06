@@ -78,6 +78,15 @@ async function main(): Promise<void> {
       case NormalizedKeys.DECREMENT:
         renderer.decrementLevel();
         break;
+      case NormalizedKeys.SCROLL_UP:
+        renderer.scrollUp();
+        break;
+      case NormalizedKeys.SCROLL_DOWN:
+        renderer.scrollDown();
+        break;
+      case NormalizedKeys.ESCAPE:
+        renderer.resetScroll();
+        break;
       case NormalizedKeys.QUIT:
         void shutdown();
         break;
