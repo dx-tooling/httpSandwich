@@ -24,6 +24,6 @@ export {
 
 // Ports (interfaces)
 export type { OutputWriter } from "./ports/output-writer.js";
-export type { TerminalUI, TerminalSize } from "./ports/terminal-ui.js";
+export type { TerminalUI, TerminalSize, ResizeHandler } from "./ports/terminal-ui.js";
 export type { KeyboardInput, KeyPressHandler } from "./ports/keyboard-input.js";
 export type { ExchangeStore } from "./ports/exchange-store.js";

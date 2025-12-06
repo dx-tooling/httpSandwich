@@ -8,8 +8,14 @@ import {
  * ANSI escape codes for terminal control.
  */
 const ANSI = {
+  /** Enter alternate screen buffer */
+  ALTERNATE_SCREEN_ON: "\x1b[?1049h",
+  /** Exit alternate screen buffer */
+  ALTERNATE_SCREEN_OFF: "\x1b[?1049l",
   /** Clear entire screen */
   CLEAR_SCREEN: "\x1b[2J",
+  /** Clear current line */
+  CLEAR_LINE: "\x1b[2K",
   /** Move cursor to home position (1,1) */
   CURSOR_HOME: "\x1b[H",
   /** Hide cursor */
@@ -36,9 +42,21 @@ export class AnsiTerminalUI implements TerminalUI {
     });
   }
 
+  public enterAlternateScreen(): void {
+    process.stdout.write(ANSI.ALTERNATE_SCREEN_ON);
+  }
+
+  public exitAlternateScreen(): void {
+    process.stdout.write(ANSI.ALTERNATE_SCREEN_OFF);
+  }
+
   public clearScreen(): void {
     process.stdout.write(ANSI.CLEAR_SCREEN);
     this.moveCursorHome();
+  }
+
+  public clearLine(): void {
+    process.stdout.write(ANSI.CLEAR_LINE);
   }
 
   public moveCursor(row: number, col: number): void {

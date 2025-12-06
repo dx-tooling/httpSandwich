@@ -5,7 +5,7 @@
  */
 
 import { parseArguments, getUsage } from "./argument-parser.js";
-import { ExchangeHistory, ScreenRenderer } from "@/application";
+import { ExchangeHistory, ScreenRenderer, TuiLayout } from "@/application";
 import {
   HttpProxyServer,
   AnsiTerminalUI,
@@ -30,7 +30,18 @@ async function main(): Promise<void> {
   const keyboard = new RawKeyboardInput();
   const history = new ExchangeHistory(historySize);
   const store = new FileExchangeStore();
-  const renderer = new ScreenRenderer(terminal, history, level);
+  const layout = new TuiLayout(terminal);
+
+  // Create screen renderer with all config
+  const renderer = new ScreenRenderer({
+    terminal,
+    history,
+    layout,
+    fromAddress: from,
+    toAddress: to,
+    storagePath: store.getStorageDir(),
+    initialLevel: level,
+  });
 
   // Create proxy server
   const server = new HttpProxyServer({
@@ -47,6 +58,16 @@ async function main(): Promise<void> {
       renderer.onNewExchange(exchange);
     },
   });
+
+  // Graceful shutdown
+  const shutdown = async (): Promise<void> => {
+    keyboard.stop();
+    terminal.showCursor();
+    terminal.exitAlternateScreen();
+    console.log("Malcolm stopped.");
+    await server.stop();
+    process.exit(0);
+  };
 
   // Handle keyboard input
   keyboard.onKeyPress((key) => {
@@ -68,16 +89,7 @@ async function main(): Promise<void> {
     renderer.redraw();
   });
 
-  // Graceful shutdown
-  const shutdown = async (): Promise<void> => {
-    keyboard.stop();
-    terminal.showCursor();
-    terminal.clearScreen();
-    console.log("Malcolm stopped.");
-    await server.stop();
-    process.exit(0);
-  };
-
+  // Handle signals for graceful shutdown
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
 
@@ -87,14 +99,10 @@ async function main(): Promise<void> {
   // Start keyboard input
   keyboard.start();
 
-  // Hide cursor and draw initial screen
+  // Enter alternate screen, hide cursor, and draw initial screen
+  terminal.enterAlternateScreen();
   terminal.hideCursor();
-  renderer.redraw();
-
-  // Show storage location
-  const storageDir = store.getStorageDir();
-  terminal.moveCursor(terminal.getSize().rows, 1);
-  terminal.write(`\x1b[2mExchanges stored in: ${storageDir}\x1b[0m`);
+  renderer.initialize();
 }
 
 main().catch((error: unknown) => {

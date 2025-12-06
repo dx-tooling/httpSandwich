@@ -17,9 +17,27 @@ export type ResizeHandler = (size: TerminalSize) => void;
  */
 export interface TerminalUI {
   /**
+   * Enter alternate screen buffer.
+   * Isolates output from main terminal history.
+   * Original content is restored when exiting.
+   */
+  enterAlternateScreen: () => void;
+
+  /**
+   * Exit alternate screen buffer.
+   * Restores original terminal content.
+   */
+  exitAlternateScreen: () => void;
+
+  /**
    * Clear the entire screen.
    */
   clearScreen: () => void;
+
+  /**
+   * Clear the current line.
+   */
+  clearLine: () => void;
 
   /**
    * Move cursor to a specific position (1-indexed).
