@@ -3,12 +3,14 @@
  *
  * This layer contains:
  * - Domain entities and value objects
- * - Repository interfaces (ports)
- * - Domain services
+ * - Port interfaces (for dependency inversion)
  * - Business rules and invariants
  *
  * The domain layer has NO external dependencies.
- * All interfaces are defined here and implemented in infrastructure.
  */
 
-export {};
+// Value Objects
+export { Address } from "./value-objects/address.js";
+
+// Ports (interfaces)
+export type { OutputWriter } from "./ports/output-writer.js";

@@ -2,8 +2,6 @@
  * Shared layer - Cross-cutting concerns and utilities
  *
  * This layer contains:
- * - Logging utilities
- * - Error types and handling
  * - Common type definitions
  * - Utility functions
  *

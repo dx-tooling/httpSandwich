@@ -21,6 +21,7 @@
     "dist"
   ],
   "scripts": {
+    "start": "tsx src/cli/main.ts",
     "dev": "tsx watch src/cli/main.ts",
     "build": "tsc",
     "test": "vitest run",
