@@ -91,6 +91,24 @@ describe("ExchangeFormatter", () => {
 
         expect(result.lines[0]).toContain("42ms");
       });
+
+      it("should truncate long header values", () => {
+        const longValue = "x".repeat(150);
+        const exchange = createMockExchange({
+          request: {
+            method: "GET",
+            path: "/test",
+            headers: { "x-long-header": longValue },
+            body: null,
+          },
+        });
+        const result = formatExchange(exchange, DetailLevel.of(4));
+
+        // Header value should be truncated with ellipsis
+        expect(result.lines.some((l) => l.includes("..."))).toBe(true);
+        // Should not contain the full 150 char value
+        expect(result.lines.some((l) => l.includes(longValue))).toBe(false);
+      });
     });
 
     describe("level 5", () => {
@@ -104,6 +122,22 @@ describe("ExchangeFormatter", () => {
         expect(result.lines.some((l) => l.includes("Response Body"))).toBe(true);
         // Should be truncated
         expect(result.lines.some((l) => l.includes("..."))).toBe(true);
+      });
+
+      it("should show full header values", () => {
+        const longValue = "x".repeat(150);
+        const exchange = createMockExchange({
+          request: {
+            method: "GET",
+            path: "/test",
+            headers: { "x-long-header": longValue },
+            body: null,
+          },
+        });
+        const result = formatExchange(exchange, DetailLevel.of(5));
+
+        // Should contain the full header value
+        expect(result.lines.some((l) => l.includes(longValue))).toBe(true);
       });
     });
 

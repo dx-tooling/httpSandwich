@@ -123,9 +123,9 @@ Detail Levels:
   1 - Dots only
   2 - Time and status code
   3 - Time, status, method, and path (default)
-  4 - Level 3 + headers
-  5 - Level 4 + truncated body
-  6 - Level 4 + full body
+  4 - Level 3 + headers (truncated values)
+  5 - Level 4 + full headers + truncated body
+  6 - Level 5 + full body
 
 Interactive Controls:
   +/=  Increase detail level

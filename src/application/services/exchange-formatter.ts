@@ -9,6 +9,9 @@ import { colorize, AnsiColors } from "@/infrastructure/color-scheme.js";
 /** Maximum body length for truncated display (level 5) */
 const BODY_TRUNCATE_LENGTH = 512;
 
+/** Maximum header value length for truncated display (level 4) */
+const HEADER_TRUNCATE_LENGTH = 100;
+
 /**
  * Formatted output for an exchange.
  */
@@ -91,7 +94,7 @@ function formatLevel3(exchange: HttpExchange, category: HttpStatusCategory): For
 }
 
 /**
- * Level 4: Level 3 + headers
+ * Level 4: Level 3 + headers (truncated values)
  */
 function formatLevel4(exchange: HttpExchange, category: HttpStatusCategory): FormattedExchange {
   const lines: string[] = [];
@@ -105,17 +108,19 @@ function formatLevel4(exchange: HttpExchange, category: HttpStatusCategory): For
 
   lines.push(colorize(`[${time}] ${status} ${method} ${path}${duration}`, category));
 
-  // Request headers
+  // Request headers (truncated values)
   lines.push(colorize("  Request Headers:", category));
   for (const [key, value] of Object.entries(exchange.request.headers)) {
-    lines.push(`${AnsiColors.dim}    ${key}: ${value}${AnsiColors.reset}`);
+    const truncatedValue = truncateText(value, HEADER_TRUNCATE_LENGTH);
+    lines.push(`${AnsiColors.dim}    ${key}: ${truncatedValue}${AnsiColors.reset}`);
   }
 
-  // Response headers (if available)
+  // Response headers (truncated values, if available)
   if (exchange.response !== null) {
     lines.push(colorize("  Response Headers:", category));
     for (const [key, value] of Object.entries(exchange.response.headers)) {
-      lines.push(`${AnsiColors.dim}    ${key}: ${value}${AnsiColors.reset}`);
+      const truncatedValue = truncateText(value, HEADER_TRUNCATE_LENGTH);
+      lines.push(`${AnsiColors.dim}    ${key}: ${truncatedValue}${AnsiColors.reset}`);
     }
   }
 
@@ -130,25 +135,42 @@ function formatLevel4(exchange: HttpExchange, category: HttpStatusCategory): For
 }
 
 /**
- * Level 5: Level 4 + truncated body
+ * Level 5: Full headers + truncated body
  */
 function formatLevel5(exchange: HttpExchange, category: HttpStatusCategory): FormattedExchange {
-  const base = formatLevel4(exchange, category);
-  const lines = [...base.lines];
+  const lines: string[] = [];
 
-  // Remove the trailing empty line from level 4
-  if (lines[lines.length - 1] === "") {
-    lines.pop();
+  // Main line
+  const time = formatTime(exchange.timestamp);
+  const status = formatStatusCode(exchange.response?.statusCode ?? null);
+  const method = exchange.request.method;
+  const path = exchange.request.path;
+  const duration = exchange.durationMs !== null ? ` (${String(exchange.durationMs)}ms)` : "";
+
+  lines.push(colorize(`[${time}] ${status} ${method} ${path}${duration}`, category));
+
+  // Request headers (full values)
+  lines.push(colorize("  Request Headers:", category));
+  for (const [key, value] of Object.entries(exchange.request.headers)) {
+    lines.push(`${AnsiColors.dim}    ${key}: ${value}${AnsiColors.reset}`);
   }
 
-  // Request body
+  // Response headers (full values, if available)
+  if (exchange.response !== null) {
+    lines.push(colorize("  Response Headers:", category));
+    for (const [key, value] of Object.entries(exchange.response.headers)) {
+      lines.push(`${AnsiColors.dim}    ${key}: ${value}${AnsiColors.reset}`);
+    }
+  }
+
+  // Request body (truncated)
   if (exchange.request.body !== null && exchange.request.body.length > 0) {
     lines.push(colorize("  Request Body:", category));
     const truncated = truncateBody(exchange.request.body, BODY_TRUNCATE_LENGTH);
     lines.push(`${AnsiColors.dim}    ${truncated}${AnsiColors.reset}`);
   }
 
-  // Response body
+  // Response body (truncated)
   const responseBody5 = exchange.response?.body;
   if (responseBody5 !== null && responseBody5 !== undefined && responseBody5.length > 0) {
     lines.push(colorize("  Response Body:", category));
@@ -167,18 +189,35 @@ function formatLevel5(exchange: HttpExchange, category: HttpStatusCategory): For
 }
 
 /**
- * Level 6: Level 4 + full body
+ * Level 6: Full headers + full body
  */
 function formatLevel6(exchange: HttpExchange, category: HttpStatusCategory): FormattedExchange {
-  const base = formatLevel4(exchange, category);
-  const lines = [...base.lines];
+  const lines: string[] = [];
 
-  // Remove the trailing empty line from level 4
-  if (lines[lines.length - 1] === "") {
-    lines.pop();
+  // Main line
+  const time = formatTime(exchange.timestamp);
+  const status = formatStatusCode(exchange.response?.statusCode ?? null);
+  const method = exchange.request.method;
+  const path = exchange.request.path;
+  const duration = exchange.durationMs !== null ? ` (${String(exchange.durationMs)}ms)` : "";
+
+  lines.push(colorize(`[${time}] ${status} ${method} ${path}${duration}`, category));
+
+  // Request headers (full values)
+  lines.push(colorize("  Request Headers:", category));
+  for (const [key, value] of Object.entries(exchange.request.headers)) {
+    lines.push(`${AnsiColors.dim}    ${key}: ${value}${AnsiColors.reset}`);
   }
 
-  // Request body
+  // Response headers (full values, if available)
+  if (exchange.response !== null) {
+    lines.push(colorize("  Response Headers:", category));
+    for (const [key, value] of Object.entries(exchange.response.headers)) {
+      lines.push(`${AnsiColors.dim}    ${key}: ${value}${AnsiColors.reset}`);
+    }
+  }
+
+  // Request body (full)
   if (exchange.request.body !== null && exchange.request.body.length > 0) {
     lines.push(colorize("  Request Body:", category));
     const bodyLines = formatBody(exchange.request.body);
@@ -187,7 +226,7 @@ function formatLevel6(exchange: HttpExchange, category: HttpStatusCategory): For
     }
   }
 
-  // Response body
+  // Response body (full)
   const responseBody6 = exchange.response?.body;
   if (responseBody6 !== null && responseBody6 !== undefined && responseBody6.length > 0) {
     lines.push(colorize("  Response Body:", category));
@@ -225,6 +264,16 @@ function formatStatusCode(statusCode: number | null): string {
     return "---";
   }
   return String(statusCode);
+}
+
+/**
+ * Truncate text to max length, adding ellipsis if needed.
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return text.substring(0, maxLength - 3) + "...";
 }
 
 /**

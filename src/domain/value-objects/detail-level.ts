@@ -5,9 +5,9 @@
  * 1 - Dot only (.)
  * 2 - Time and status code
  * 3 - Time, status, method, and path
- * 4 - Level 3 + headers
- * 5 - Level 4 + truncated body
- * 6 - Level 4 + full body
+ * 4 - Level 3 + headers (truncated values at 100 chars)
+ * 5 - Level 4 + full headers + truncated body (512 chars)
+ * 6 - Level 5 + full body
  */
 export class DetailLevel {
   public static readonly MIN = 1;
