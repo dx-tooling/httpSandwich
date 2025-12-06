@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    // Output settings
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    // Strict type-checking
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "exactOptionalPropertyTypes": true,
+
+    // Module interop
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    // Path aliases for clean architecture imports
+    "baseUrl": ".",
+    "paths": {
+      "@/domain": ["./src/domain/index.ts"],
+      "@/domain/*": ["./src/domain/*"],
+      "@/application": ["./src/application/index.ts"],
+      "@/application/*": ["./src/application/*"],
+      "@/infrastructure": ["./src/infrastructure/index.ts"],
+      "@/infrastructure/*": ["./src/infrastructure/*"],
+      "@/cli": ["./src/cli/index.ts"],
+      "@/cli/*": ["./src/cli/*"],
+      "@/shared": ["./src/shared/index.ts"],
+      "@/shared/*": ["./src/shared/*"]
+    },
+
+    // Other
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  }
+}
