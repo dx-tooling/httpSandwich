@@ -10,3 +10,10 @@
  */
 
 export { ProxyRequestHandler } from "./use-cases/proxy-request.js";
+export {
+  formatExchange,
+  calculateTotalLines,
+  type FormattedExchange,
+} from "./services/exchange-formatter.js";
+export { ExchangeHistory, type ExchangeAddedHandler } from "./services/exchange-history.js";
+export { ScreenRenderer } from "./services/screen-renderer.js";

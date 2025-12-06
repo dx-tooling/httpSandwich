@@ -5,8 +5,14 @@
  */
 
 import { parseArguments, getUsage } from "./argument-parser.js";
-import { ProxyRequestHandler } from "@/application";
-import { ConsoleOutputWriter, HttpProxyServer } from "@/infrastructure";
+import { ExchangeHistory, ScreenRenderer } from "@/application";
+import {
+  HttpProxyServer,
+  AnsiTerminalUI,
+  RawKeyboardInput,
+  NormalizedKeys,
+  FileExchangeStore,
+} from "@/infrastructure";
 
 async function main(): Promise<void> {
   const result = parseArguments(process.argv.slice(2));
@@ -17,20 +23,57 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const { from, to } = result.config;
+  const { from, to, level, historySize } = result.config;
 
-  const outputWriter = new ConsoleOutputWriter();
-  const requestHandler = new ProxyRequestHandler(outputWriter);
+  // Initialize components
+  const terminal = new AnsiTerminalUI();
+  const keyboard = new RawKeyboardInput();
+  const history = new ExchangeHistory(historySize);
+  const store = new FileExchangeStore();
+  const renderer = new ScreenRenderer(terminal, history, level);
 
+  // Create proxy server
   const server = new HttpProxyServer({
     from,
     to,
-    requestHandler,
+    onExchange: (exchange) => {
+      // Store exchange to file (async, don't block)
+      void store.save(exchange);
+
+      // Add to history
+      history.add(exchange);
+
+      // Redraw screen
+      renderer.onNewExchange(exchange);
+    },
   });
 
-  // Handle graceful shutdown
+  // Handle keyboard input
+  keyboard.onKeyPress((key) => {
+    switch (key) {
+      case NormalizedKeys.INCREMENT:
+        renderer.incrementLevel();
+        break;
+      case NormalizedKeys.DECREMENT:
+        renderer.decrementLevel();
+        break;
+      case NormalizedKeys.QUIT:
+        void shutdown();
+        break;
+    }
+  });
+
+  // Handle terminal resize
+  terminal.onResize(() => {
+    renderer.redraw();
+  });
+
+  // Graceful shutdown
   const shutdown = async (): Promise<void> => {
-    console.log("\nShutting down...");
+    keyboard.stop();
+    terminal.showCursor();
+    terminal.clearScreen();
+    console.log("Malcolm stopped.");
     await server.stop();
     process.exit(0);
   };
@@ -38,9 +81,20 @@ async function main(): Promise<void> {
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
 
+  // Start server
   await server.start();
-  console.log(`Malcolm proxy listening on ${from.toString()}`);
-  console.log(`Forwarding requests to ${to.toString()}`);
+
+  // Start keyboard input
+  keyboard.start();
+
+  // Hide cursor and draw initial screen
+  terminal.hideCursor();
+  renderer.redraw();
+
+  // Show storage location
+  const storageDir = store.getStorageDir();
+  terminal.moveCursor(terminal.getSize().rows, 1);
+  terminal.write(`\x1b[2mExchanges stored in: ${storageDir}\x1b[0m`);
 }
 
 main().catch((error: unknown) => {

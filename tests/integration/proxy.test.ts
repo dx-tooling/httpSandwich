@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from "node:http";
-import { Address, type OutputWriter } from "@/domain";
-import { ProxyRequestHandler } from "@/application";
+import { Address, type HttpExchange } from "@/domain";
 import { HttpProxyServer } from "@/infrastructure";
 
 describe("Proxy Integration", () => {
@@ -9,13 +8,8 @@ describe("Proxy Integration", () => {
   let targetPort: number;
   let receivedRequests: { method: string; url: string; headers: Record<string, unknown> }[];
 
-  // Collect output written by the proxy
-  let outputWritten: string[];
-  const testOutputWriter: OutputWriter = {
-    write: (text: string) => {
-      outputWritten.push(text);
-    },
-  };
+  // Collect exchanges from the proxy
+  let capturedExchanges: HttpExchange[];
 
   beforeAll(async () => {
     receivedRequests = [];
@@ -54,7 +48,7 @@ describe("Proxy Integration", () => {
 
   beforeEach(() => {
     receivedRequests = [];
-    outputWritten = [];
+    capturedExchanges = [];
   });
 
   function getProxyPort(proxy: HttpProxyServer): number {
@@ -66,11 +60,12 @@ describe("Proxy Integration", () => {
   }
 
   it("should forward GET request to target server", async () => {
-    const requestHandler = new ProxyRequestHandler(testOutputWriter);
     const proxy = new HttpProxyServer({
       from: Address.parse("0"), // Port 0 = random available port
       to: Address.parse(`127.0.0.1:${String(targetPort)}`),
-      requestHandler,
+      onExchange: (exchange) => {
+        capturedExchanges.push(exchange);
+      },
     });
 
     await proxy.start();
@@ -90,19 +85,22 @@ describe("Proxy Integration", () => {
       expect(receivedRequests[0]?.method).toBe("GET");
       expect(receivedRequests[0]?.url).toBe("/api/test");
 
-      // Verify dot was written
-      expect(outputWritten).toEqual(["."]);
+      // Verify exchange was captured
+      expect(capturedExchanges).toHaveLength(1);
+      expect(capturedExchanges[0]?.request.method).toBe("GET");
+      expect(capturedExchanges[0]?.response?.statusCode).toBe(200);
     } finally {
       await proxy.stop();
     }
   });
 
   it("should forward POST request with body to target server", async () => {
-    const requestHandler = new ProxyRequestHandler(testOutputWriter);
     const proxy = new HttpProxyServer({
       from: Address.parse("0"),
       to: Address.parse(`127.0.0.1:${String(targetPort)}`),
-      requestHandler,
+      onExchange: (exchange) => {
+        capturedExchanges.push(exchange);
+      },
     });
 
     await proxy.start();
@@ -120,17 +118,22 @@ describe("Proxy Integration", () => {
       expect(receivedRequests).toHaveLength(1);
       expect(receivedRequests[0]?.method).toBe("POST");
       expect(receivedRequests[0]?.url).toBe("/api/data");
+
+      // Verify exchange captured request body
+      expect(capturedExchanges).toHaveLength(1);
+      expect(capturedExchanges[0]?.request.body).toContain("test");
     } finally {
       await proxy.stop();
     }
   });
 
   it("should preserve request headers", async () => {
-    const requestHandler = new ProxyRequestHandler(testOutputWriter);
     const proxy = new HttpProxyServer({
       from: Address.parse("0"),
       to: Address.parse(`127.0.0.1:${String(targetPort)}`),
-      requestHandler,
+      onExchange: (exchange) => {
+        capturedExchanges.push(exchange);
+      },
     });
 
     await proxy.start();
@@ -154,11 +157,12 @@ describe("Proxy Integration", () => {
   });
 
   it("should return 502 when target is unreachable", async () => {
-    const requestHandler = new ProxyRequestHandler(testOutputWriter);
     const proxy = new HttpProxyServer({
       from: Address.parse("0"),
       to: Address.parse("127.0.0.1:59999"), // Non-existent server
-      requestHandler,
+      onExchange: (exchange) => {
+        capturedExchanges.push(exchange);
+      },
     });
 
     await proxy.start();
@@ -169,19 +173,22 @@ describe("Proxy Integration", () => {
       const response = await fetch(`http://localhost:${String(proxyPort)}/api/test`);
 
       expect(response.status).toBe(502);
-      // No dot should be written on failure
-      expect(outputWritten).toEqual([]);
+
+      // Exchange should be captured with null response
+      expect(capturedExchanges).toHaveLength(1);
+      expect(capturedExchanges[0]?.response).toBeNull();
     } finally {
       await proxy.stop();
     }
   });
 
-  it("should write a dot for each successful request", async () => {
-    const requestHandler = new ProxyRequestHandler(testOutputWriter);
+  it("should capture multiple exchanges", async () => {
     const proxy = new HttpProxyServer({
       from: Address.parse("0"),
       to: Address.parse(`127.0.0.1:${String(targetPort)}`),
-      requestHandler,
+      onExchange: (exchange) => {
+        capturedExchanges.push(exchange);
+      },
     });
 
     await proxy.start();
@@ -194,7 +201,7 @@ describe("Proxy Integration", () => {
       await fetch(url);
       await fetch(url);
 
-      expect(outputWritten).toEqual([".", ".", "."]);
+      expect(capturedExchanges).toHaveLength(3);
     } finally {
       await proxy.stop();
     }
