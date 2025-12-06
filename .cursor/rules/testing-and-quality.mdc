@@ -1,0 +1,341 @@
+---
+description: Testing strategies and quality standards for the Malcolm codebase
+globs:
+  - "tests/**/*.ts"
+  - "src/**/*.ts"
+alwaysApply: false
+---
+
+# Testing and Quality
+
+Malcolm uses **Vitest** for testing with a focus on isolated unit tests and meaningful integration tests.
+
+## Test Structure
+
+```
+tests/
+  unit/                    → Isolated unit tests (mocked dependencies)
+    domain/                → Mirror src/domain/ structure
+    application/           → Mirror src/application/ structure
+    infrastructure/        → Mirror src/infrastructure/ structure
+  integration/             → Tests with real dependencies
+  helpers/                 → Test utilities, factories, mocks
+```
+
+## Running Tests
+
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Watch mode for development
+npm run test:coverage # Run with coverage report
+```
+
+## Quality Checks
+
+```bash
+npm run quality       # Full check: lint + format + typecheck + test
+npm run quality:fix   # Auto-fix: lint + format issues
+```
+
+All checks must pass before merging to main. No warnings allowed.
+
+## Unit Testing Principles
+
+### Test One Thing
+
+Each test should verify a single behavior:
+
+```typescript
+// ✅ CORRECT: One assertion per behavior
+describe("ProxyServer", () => {
+  it("should start listening on the configured port", async () => {
+    const server = new ProxyServer({ port: 8080 });
+    await server.start();
+    expect(server.isListening()).toBe(true);
+  });
+
+  it("should throw if port is already in use", async () => {
+    // Separate test for error case
+  });
+});
+
+// ❌ WRONG: Testing multiple behaviors
+it("should start and handle requests and log errors", () => {
+  // Too many things in one test
+});
+```
+
+### Arrange-Act-Assert
+
+Structure tests with clear phases:
+
+```typescript
+it("should forward request to target server", async () => {
+  // Arrange
+  const mockTarget = createMockServer();
+  const proxy = new ProxyServer({ target: mockTarget.url });
+  await proxy.start();
+
+  // Act
+  const response = await fetch(proxy.url + "/api/users");
+
+  // Assert
+  expect(response.status).toBe(200);
+  expect(mockTarget.receivedRequests).toHaveLength(1);
+});
+```
+
+### Descriptive Test Names
+
+Use `should` + expected behavior:
+
+```typescript
+// ✅ CORRECT
+it("should return 502 when target server is unreachable", () => {});
+it("should preserve original request headers", () => {});
+it("should timeout after configured duration", () => {});
+
+// ❌ WRONG
+it("test error", () => {});
+it("works", () => {});
+it("handles the thing", () => {});
+```
+
+### Mock at Boundaries
+
+Mock external dependencies, not internal modules:
+
+```typescript
+// ✅ CORRECT: Mock the interface, not the implementation
+const mockLogger: Logger = {
+  info: vi.fn(),
+  error: vi.fn(),
+};
+const server = new ProxyServer({ logger: mockLogger });
+
+// ❌ WRONG: Mocking internal modules
+vi.mock("@/infrastructure/console-logger");
+```
+
+### Test Public API
+
+Test behavior through public interfaces, not implementation details:
+
+```typescript
+// ✅ CORRECT: Test observable behavior
+it("should emit 'request' event when receiving HTTP request", async () => {
+  const proxy = new ProxyServer(config);
+  const requestHandler = vi.fn();
+  proxy.on("request", requestHandler);
+
+  await fetch(proxy.url + "/test");
+
+  expect(requestHandler).toHaveBeenCalledWith(
+    expect.objectContaining({ path: "/test" })
+  );
+});
+
+// ❌ WRONG: Testing private methods
+it("should call _parseHeaders correctly", () => {
+  // Don't test private implementation
+});
+```
+
+## Test Helpers
+
+Create reusable test utilities in `tests/helpers/`:
+
+```typescript
+// tests/helpers/factories.ts
+export function createTestConfig(
+  overrides?: Partial<ProxyConfig>
+): ProxyConfig {
+  return {
+    port: 0, // Random available port
+    targetHost: "localhost",
+    targetPort: 3000,
+    ...overrides,
+  };
+}
+
+// tests/helpers/mocks.ts
+export function createMockLogger(): Logger & {
+  calls: { info: unknown[][]; error: unknown[][] };
+} {
+  const calls = { info: [] as unknown[][], error: [] as unknown[][] };
+  return {
+    info: (...args: unknown[]) => calls.info.push(args),
+    error: (...args: unknown[]) => calls.error.push(args),
+    calls,
+  };
+}
+```
+
+## Integration Tests
+
+Integration tests verify components work together with real dependencies:
+
+```typescript
+// tests/integration/proxy-forwarding.test.ts
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+
+describe("Proxy Forwarding", () => {
+  let targetServer: Server;
+  let proxy: ProxyServer;
+
+  beforeAll(async () => {
+    targetServer = await startTestServer();
+    proxy = new ProxyServer({ target: targetServer.url });
+    await proxy.start();
+  });
+
+  afterAll(async () => {
+    await proxy.stop();
+    await targetServer.close();
+  });
+
+  it("should forward GET requests to target", async () => {
+    const response = await fetch(proxy.url + "/api/data");
+    expect(response.status).toBe(200);
+  });
+});
+```
+
+## Vitest Features
+
+### Assertions
+
+```typescript
+// Basic assertions
+expect(value).toBe(expected);           // Strict equality
+expect(value).toEqual(expected);        // Deep equality
+expect(value).toBeDefined();
+expect(value).toBeNull();
+expect(value).toBeTruthy();
+
+// Objects and arrays
+expect(obj).toMatchObject({ key: "value" });
+expect(array).toContain(item);
+expect(array).toHaveLength(3);
+
+// Functions and mocks
+expect(fn).toHaveBeenCalled();
+expect(fn).toHaveBeenCalledWith(arg1, arg2);
+expect(fn).toHaveBeenCalledTimes(2);
+
+// Async
+await expect(promise).resolves.toBe(value);
+await expect(promise).rejects.toThrow("error message");
+
+// Errors
+expect(() => riskyFn()).toThrow(ErrorType);
+expect(() => riskyFn()).toThrow(/pattern/);
+```
+
+### Mocking
+
+```typescript
+import { vi, type Mock } from "vitest";
+
+// Mock functions
+const mockFn = vi.fn();
+const mockFnWithImpl = vi.fn((x: number) => x * 2);
+
+// Mock return values
+mockFn.mockReturnValue("value");
+mockFn.mockResolvedValue("async value");
+mockFn.mockRejectedValue(new Error("failed"));
+
+// Spies
+const spy = vi.spyOn(object, "method");
+spy.mockImplementation(() => "mocked");
+
+// Timers
+vi.useFakeTimers();
+vi.advanceTimersByTime(1000);
+vi.runAllTimers();
+vi.useRealTimers();
+```
+
+## Code Coverage
+
+Coverage reports are generated with `npm run test:coverage`.
+
+Coverage thresholds (enforced):
+- Statements: 80%
+- Branches: 80%
+- Functions: 80%
+- Lines: 80%
+
+Excluded from coverage:
+- `src/**/index.ts` (barrel exports)
+- `src/cli/main.ts` (entry point)
+
+## Quality Standards
+
+### ESLint
+
+Strict TypeScript rules enforced:
+- No unused variables (prefix with `_` if intentional)
+- Explicit return types on exported functions
+- Explicit member accessibility
+- Consistent type imports (`import { type X }`)
+- No `any` type
+
+### Prettier
+
+Consistent formatting:
+- 2 spaces indentation
+- 100 character line width
+- Double quotes
+- Semicolons
+- Trailing commas (ES5)
+
+### TypeScript
+
+Strict mode with additional checks:
+- `strict: true`
+- `noUncheckedIndexedAccess: true`
+- `exactOptionalPropertyTypes: true`
+- `noImplicitOverride: true`
+
+### File Types Covered
+
+All file types are linted and formatted:
+- TypeScript (`.ts`) - ESLint + Prettier
+- JavaScript (`.js`, `.mjs`) - ESLint + Prettier
+- JSON (`.json`) - ESLint (jsonc) + Prettier
+- YAML (`.yaml`, `.yml`) - ESLint (yml) + Prettier
+- Markdown (`.md`) - Prettier
+
+## Pre-Commit Checklist
+
+Before committing:
+
+1. ✅ `npm run quality` passes with no warnings
+2. ✅ New code has corresponding tests
+3. ✅ Tests are meaningful (not just for coverage)
+4. ✅ No `console.log` debugging statements
+5. ✅ No commented-out code
+6. ✅ Exports are properly typed
+
+## Writing Good Tests
+
+### Do
+
+- Test behavior, not implementation
+- Use meaningful test descriptions
+- Keep tests focused and small
+- Clean up resources in `afterEach`/`afterAll`
+- Use factories for test data
+- Test edge cases and error conditions
+
+### Don't
+
+- Don't test private methods directly
+- Don't write tests that depend on each other
+- Don't use real network calls in unit tests
+- Don't assert on mock call counts without reason
+- Don't skip tests without a tracking issue
+- Don't test third-party library behavior
+

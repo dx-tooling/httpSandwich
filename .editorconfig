@@ -1,0 +1,60 @@
+# EditorConfig - https://editorconfig.org
+# Ensures consistent coding styles across different editors and IDEs
+
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# TypeScript and JavaScript
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_size = 2
+max_line_length = 100
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yaml,yml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+# Trailing whitespace can be significant in Markdown (line breaks)
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+
+# Makefiles require tabs
+[Makefile]
+indent_style = tab
+
+# Git configuration files
+[.git*]
+indent_size = 2
+
+# EditorConfig and dotfiles
+[.editorconfig]
+indent_size = 2
+
+[.prettierrc]
+indent_size = 2
+
+[.nvmrc]
+insert_final_newline = true
+
+# Lock files - don't modify
+[{package-lock.json,*.lock}]
+indent_size = 2
+insert_final_newline = false
+

@@ -1,0 +1,247 @@
+---
+description: Architecture and design principles for the Malcolm codebase
+globs:
+  - "src/**/*.ts"
+alwaysApply: false
+---
+
+# Code Architecture and Design
+
+Malcolm follows a **Clean Architecture** pattern with strict separation of concerns and dependency inversion.
+
+## Layer Structure
+
+```
+src/
+  domain/           → Core business logic (innermost, no dependencies)
+  application/      → Use cases and orchestration (depends only on domain)
+  infrastructure/   → External concerns (implements domain interfaces)
+  cli/              → Entry point (thin adapter to application layer)
+  shared/           → Cross-cutting utilities (used by all layers)
+```
+
+## Dependency Rules
+
+Dependencies flow **inward only**:
+
+- `domain/` has NO external dependencies (not even Node.js APIs)
+- `application/` depends only on `domain/` interfaces
+- `infrastructure/` implements interfaces from `domain/`, may use external packages
+- `cli/` orchestrates `application/` use cases, handles I/O
+- `shared/` provides utilities, must not depend on any layer
+
+```
+cli → application → domain ← infrastructure
+                      ↑
+                   shared (utilities only)
+```
+
+## Dependency Inversion Principle
+
+Components depend on **interfaces**, not concrete implementations:
+
+```typescript
+// ✅ CORRECT: Define interface in domain
+// src/domain/ports/Logger.ts
+export interface Logger {
+  info: (message: string, context?: Record<string, unknown>) => void;
+  error: (message: string, error?: Error) => void;
+}
+
+// src/infrastructure/ConsoleLogger.ts
+import { type Logger } from "@/domain";
+
+export class ConsoleLogger implements Logger {
+  public info(message: string, context?: Record<string, unknown>): void {
+    console.log(message, context);
+  }
+  public error(message: string, error?: Error): void {
+    console.error(message, error);
+  }
+}
+
+// ❌ WRONG: Importing concrete implementation in application layer
+import { ConsoleLogger } from "@/infrastructure"; // Never do this!
+```
+
+## Interface Design
+
+1. **Define interfaces in `domain/`** for any external dependency:
+   - Loggers, HTTP clients, file system, databases
+   - Any service that could have multiple implementations
+
+2. **Implement interfaces in `infrastructure/`**:
+   - Concrete implementations live here
+   - Can use Node.js APIs and external packages
+
+3. **Inject dependencies** via constructor:
+   ```typescript
+   export class ProxyServer {
+     public constructor(
+       private readonly logger: Logger,
+       private readonly config: ProxyConfig
+     ) {}
+   }
+   ```
+
+## Naming Conventions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Interfaces | PascalCase, noun/adjective | `Logger`, `Configurable` |
+| Classes | PascalCase, noun | `ConsoleLogger`, `ProxyServer` |
+| Functions | camelCase, verb | `createProxy`, `parseRequest` |
+| Constants | SCREAMING_SNAKE_CASE | `DEFAULT_PORT`, `MAX_RETRIES` |
+| Files | kebab-case | `console-logger.ts`, `proxy-server.ts` |
+| Type aliases | PascalCase | `RequestHandler`, `ProxyConfig` |
+| Enums | PascalCase, members PascalCase | `LogLevel.Debug` |
+
+## File Organization
+
+Each layer uses **barrel exports** (`index.ts`) to control public API:
+
+```typescript
+// src/domain/index.ts
+export type { Logger } from "./ports/logger.js";
+export type { ProxyConfig } from "./entities/proxy-config.js";
+export { HttpMethod } from "./value-objects/http-method.js";
+```
+
+Only import from barrel exports when crossing layer boundaries:
+
+```typescript
+// ✅ CORRECT: Import from barrel
+import { type Logger, HttpMethod } from "@/domain";
+
+// ❌ WRONG: Deep import across layers
+import { type Logger } from "@/domain/ports/logger.js";
+```
+
+Within the same layer, direct imports are acceptable.
+
+## Path Aliases
+
+Always use path aliases for cross-layer imports:
+
+- `@/domain` → `src/domain/index.ts`
+- `@/application` → `src/application/index.ts`
+- `@/infrastructure` → `src/infrastructure/index.ts`
+- `@/cli` → `src/cli/index.ts`
+- `@/shared` → `src/shared/index.ts`
+
+## TypeScript Practices
+
+### Type Imports
+
+Always use explicit type imports:
+
+```typescript
+// ✅ CORRECT
+import { type Logger, type ProxyConfig } from "@/domain";
+import { createServer } from "node:http";
+
+// ❌ WRONG
+import { Logger, ProxyConfig } from "@/domain";
+```
+
+### Explicit Return Types
+
+All exported functions must have explicit return types:
+
+```typescript
+// ✅ CORRECT
+export function createLogger(level: LogLevel): Logger {
+  return new ConsoleLogger(level);
+}
+
+// ❌ WRONG
+export function createLogger(level: LogLevel) {
+  return new ConsoleLogger(level);
+}
+```
+
+### Explicit Member Accessibility
+
+All class members must have explicit accessibility modifiers:
+
+```typescript
+// ✅ CORRECT
+export class ProxyServer {
+  private readonly port: number;
+  public constructor(config: ProxyConfig) {}
+  public start(): void {}
+  private handleRequest(): void {}
+}
+
+// ❌ WRONG
+export class ProxyServer {
+  port: number;  // Missing modifier
+  constructor(config: ProxyConfig) {}
+}
+```
+
+### Prefer Readonly
+
+Use `readonly` for properties that shouldn't be reassigned:
+
+```typescript
+export class ProxyServer {
+  private readonly logger: Logger;
+  private readonly config: ProxyConfig;
+}
+```
+
+### Avoid `any`
+
+Never use `any`. Use `unknown` and narrow types:
+
+```typescript
+// ✅ CORRECT
+function parseJson(input: string): unknown {
+  return JSON.parse(input);
+}
+
+// ❌ WRONG
+function parseJson(input: string): any {
+  return JSON.parse(input);
+}
+```
+
+## Error Handling
+
+1. **Define domain-specific errors** in `domain/`:
+   ```typescript
+   export class ProxyError extends Error {
+     public constructor(
+       message: string,
+       public readonly code: string,
+       public readonly cause?: Error
+     ) {
+       super(message);
+       this.name = "ProxyError";
+     }
+   }
+   ```
+
+2. **Fail fast**: Validate inputs at boundaries (CLI, HTTP handlers)
+
+3. **Use Result types** for recoverable errors instead of throwing:
+   ```typescript
+   type Result<T, E = Error> = { ok: true; value: T } | { ok: false; error: E };
+   ```
+
+## Minimal Dependencies
+
+Before adding a package, consider:
+
+1. Can this be implemented in <50 lines?
+2. Is this a well-maintained, battle-tested package?
+3. Does it have minimal transitive dependencies?
+
+Prefer Node.js built-in APIs over external packages:
+
+- `node:http` / `node:https` for HTTP
+- `node:fs/promises` for file system
+- `node:crypto` for cryptography
+- `node:events` for event emitters
+
