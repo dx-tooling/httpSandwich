@@ -38,17 +38,11 @@ Unlike heavyweight solutions, httpSandwich is:
 
 ### Prerequisites
 
-- Node.js 24 or higher
+- Node.js 20 or higher
 
 ### Installation
 
-```bash
-# Install globally (recommended)
-npm install -g httpsandwich
-
-# Or try it directly without installing
-npx httpsandwich between 8000 and localhost:3000
-```
+It is recommended to simply run httpSandwich directly via `npx`, as shown below.
 
 ### Basic Usage
 
