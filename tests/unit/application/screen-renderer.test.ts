@@ -234,10 +234,10 @@ describe("ScreenRenderer", () => {
     });
   });
 
-  describe("scroll navigation", () => {
+  describe("item selection navigation", () => {
     beforeEach(() => {
       renderer = createRenderer(DetailLevel.of(3));
-      terminal.setSize(10, 80); // Small terminal for scroll testing
+      terminal.setSize(10, 80); // Small terminal for selection testing
 
       // Add many exchanges to ensure scrollable content
       for (let i = 0; i < 30; i++) {
@@ -250,108 +250,150 @@ describe("ScreenRenderer", () => {
       renderer.initialize();
     });
 
-    it("should start in auto-scroll mode", () => {
-      expect(renderer.isManualScrollMode()).toBe(false);
+    it("should start with no selection", () => {
+      expect(renderer.isSelectionActive()).toBe(false);
+      expect(renderer.getSelectedIndex()).toBeNull();
     });
 
-    it("should enter manual scroll mode on scrollUp", () => {
-      renderer.scrollUp();
-      expect(renderer.isManualScrollMode()).toBe(true);
+    it("should enter selection mode on selectUp and select last item", () => {
+      renderer.selectUp();
+      expect(renderer.isSelectionActive()).toBe(true);
+      // Should select last item (newest, index 29)
+      expect(renderer.getSelectedIndex()).toBe(29);
     });
 
-    it("should show older content when scrolling up", () => {
+    it("should move selection to older items on subsequent selectUp", () => {
+      renderer.selectUp(); // Select last (29)
+      renderer.selectUp(); // Move to 28
+      renderer.selectUp(); // Move to 27
+
+      expect(renderer.getSelectedIndex()).toBe(27);
+    });
+
+    it("should exit selection mode when selectDown reaches last item", () => {
+      renderer.selectUp(); // Select last (29)
+      renderer.selectUp(); // Move to 28
+      expect(renderer.isSelectionActive()).toBe(true);
+
+      renderer.selectDown(); // Move to 29
+      expect(renderer.getSelectedIndex()).toBe(29);
+
+      renderer.selectDown(); // Exit selection mode
+      expect(renderer.isSelectionActive()).toBe(false);
+      expect(renderer.getSelectedIndex()).toBeNull();
+    });
+
+    it("should reset selection on resetSelection", () => {
+      renderer.selectUp();
+      renderer.selectUp();
+      expect(renderer.isSelectionActive()).toBe(true);
+
+      renderer.resetSelection();
+      expect(renderer.isSelectionActive()).toBe(false);
+      expect(renderer.getSelectedIndex()).toBeNull();
+    });
+
+    it("should show newest content after resetSelection", () => {
+      renderer.selectUp();
+      renderer.selectUp();
+      renderer.selectUp();
       terminal.clear();
-      renderer.scrollUp();
-      renderer.scrollUp();
-      renderer.scrollUp();
 
-      const allText = terminal.writtenText.join("");
-      // Should no longer show the very newest exchange
-      expect(allText).not.toContain("/api/29");
-    });
-
-    it("should return to auto mode when scrolling back to bottom", () => {
-      renderer.scrollUp();
-      renderer.scrollUp();
-      expect(renderer.isManualScrollMode()).toBe(true);
-
-      renderer.scrollDown();
-      renderer.scrollDown();
-      expect(renderer.isManualScrollMode()).toBe(false);
-    });
-
-    it("should reset to auto mode on resetScroll", () => {
-      renderer.scrollUp();
-      renderer.scrollUp();
-      expect(renderer.isManualScrollMode()).toBe(true);
-
-      renderer.resetScroll();
-      expect(renderer.isManualScrollMode()).toBe(false);
-    });
-
-    it("should show newest content after resetScroll", () => {
-      renderer.scrollUp();
-      renderer.scrollUp();
-      renderer.scrollUp();
-      terminal.clear();
-
-      renderer.resetScroll();
+      renderer.resetSelection();
 
       const allText = terminal.writtenText.join("");
       expect(allText).toContain("/api/29");
     });
 
-    it("should not scroll past the beginning", () => {
-      // Scroll up many times
+    it("should not select past the first item", () => {
+      // Select up many times
       for (let i = 0; i < 100; i++) {
-        renderer.scrollUp();
+        renderer.selectUp();
       }
 
+      // Should be at first item (index 0)
+      expect(renderer.getSelectedIndex()).toBe(0);
+    });
+
+    it("should not enter selection mode when selectDown is called with no selection", () => {
+      expect(renderer.isSelectionActive()).toBe(false);
+      renderer.selectDown();
+      expect(renderer.isSelectionActive()).toBe(false);
+    });
+
+    it("should show selection indicator in footer when selection active", () => {
+      terminal.clear();
+      renderer.selectUp();
+
+      const allText = terminal.writtenText.join("");
+      // Should show position indicator like [30/30]
+      expect(allText).toContain("[30/30]");
+    });
+
+    it("should not show selection indicator when no selection", () => {
+      renderer.initialize();
+
+      const allText = terminal.writtenText.join("");
+      // Should not have a selection indicator
+      expect(allText).not.toMatch(/\[\d+\/\d+\]/);
+    });
+
+    it("should provide selection state with correct values", () => {
+      renderer.selectUp();
+      renderer.selectUp();
+
+      const state = renderer.getSelectionState();
+      expect(state.mode).toBe("active");
+      expect(state.totalItems).toBe(30);
+      expect(state.selectedItem).toBe(29); // 1-indexed display value
+    });
+
+    it("should reset selection when detail level changes", () => {
+      renderer.selectUp();
+      renderer.selectUp();
+      expect(renderer.isSelectionActive()).toBe(true);
+
+      renderer.incrementLevel();
+      expect(renderer.isSelectionActive()).toBe(false);
+    });
+
+    it("should highlight selected item with inverted colors", () => {
+      terminal.clear();
+      renderer.selectUp(); // Select last item
+
+      const allText = terminal.writtenText.join("");
+      // Should contain the selection ANSI code (reverse video)
+      expect(allText).toContain("\x1b[7m");
+    });
+
+    it("should keep selected item visible when scrolling viewport", () => {
+      // Select and move to an older item
+      for (let i = 0; i < 25; i++) {
+        renderer.selectUp();
+      }
       terminal.clear();
       renderer.redraw();
 
       const allText = terminal.writtenText.join("");
-      // Should show the oldest exchange
-      expect(allText).toContain("/api/0");
+      // The selected item (index 5, path /api/5) should be visible
+      expect(allText).toContain("/api/5");
     });
 
-    it("should not enter manual mode when already at bottom and scrollDown is called", () => {
-      expect(renderer.isManualScrollMode()).toBe(false);
+    // Legacy API compatibility tests
+    it("should support legacy scrollUp alias", () => {
+      renderer.scrollUp();
+      expect(renderer.isManualScrollMode()).toBe(true);
+    });
+
+    it("should support legacy scrollDown alias", () => {
+      renderer.scrollUp();
       renderer.scrollDown();
       expect(renderer.isManualScrollMode()).toBe(false);
     });
 
-    it("should show scroll indicator in footer when in manual mode", () => {
-      terminal.clear();
+    it("should support legacy resetScroll alias", () => {
       renderer.scrollUp();
-
-      const allText = terminal.writtenText.join("");
-      expect(allText).toContain("[SCROLL]");
-    });
-
-    it("should not show scroll indicator when in auto mode", () => {
-      renderer.initialize();
-
-      const allText = terminal.writtenText.join("");
-      expect(allText).not.toContain("[SCROLL]");
-    });
-
-    it("should provide scroll state with correct values", () => {
-      renderer.scrollUp();
-      renderer.scrollUp();
-
-      const state = renderer.getScrollState();
-      expect(state.mode).toBe("manual");
-      expect(state.totalLines).toBeGreaterThan(0);
-      expect(state.firstLine).toBeLessThan(state.lastLine);
-    });
-
-    it("should reset scroll when detail level changes", () => {
-      renderer.scrollUp();
-      renderer.scrollUp();
-      expect(renderer.isManualScrollMode()).toBe(true);
-
-      renderer.incrementLevel();
+      renderer.resetScroll();
       expect(renderer.isManualScrollMode()).toBe(false);
     });
   });

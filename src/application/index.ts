@@ -19,6 +19,9 @@ export { ExchangeHistory, type ExchangeAddedHandler } from "./services/exchange-
 export {
   ScreenRenderer,
   type ScreenRendererConfig,
+  type SelectionMode,
+  type SelectionState,
+  // Legacy aliases
   type ScrollMode,
   type ScrollState,
 } from "./services/screen-renderer.js";

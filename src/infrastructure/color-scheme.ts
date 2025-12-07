@@ -30,6 +30,9 @@ export const AnsiColors = {
 
   /** Bold text */
   bold: "\x1b[1m",
+
+  /** Selection highlight (inverted/reverse video) */
+  selection: "\x1b[7m",
 } as const;
 
 /**

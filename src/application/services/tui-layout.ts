@@ -1,6 +1,6 @@
 import { type TerminalUI, type TerminalSize, type Address, type DetailLevel } from "@/domain";
 import { AnsiColors } from "@/infrastructure/color-scheme.js";
-import { type ScrollState } from "./screen-renderer.js";
+import { type SelectionState } from "./screen-renderer.js";
 
 /**
  * Layout regions for the TUI.
@@ -68,31 +68,29 @@ export class TuiLayout {
   }
 
   /**
-   * Render the footer with controls, status, and scroll info.
+   * Render the footer with controls, status, and selection info.
    */
   public renderFooter(
     exchangeCount: number,
     historyCapacity: number,
     storagePath: string,
-    scrollState?: ScrollState
+    selectionState?: SelectionState
   ): void {
     const regions = this.getRegions();
 
     this.terminal.moveCursor(regions.footerRow, 1);
     this.terminal.clearLine();
 
-    // Build scroll indicator
-    let scrollIndicator = "";
-    if (scrollState !== undefined && scrollState.totalLines > 0) {
-      if (scrollState.mode === "manual") {
-        scrollIndicator = `${AnsiColors.bold}[SCROLL]${AnsiColors.reset} ${String(scrollState.firstLine)}-${String(scrollState.lastLine)}/${String(scrollState.totalLines)} • `;
-      }
+    // Build selection indicator
+    let selectionIndicator = "";
+    if (selectionState?.mode === "active" && selectionState.selectedItem !== null) {
+      selectionIndicator = `${AnsiColors.bold}[${String(selectionState.selectedItem)}/${String(selectionState.totalItems)}]${AnsiColors.reset} `;
     }
 
     // Build controls hint based on mode
-    const modeHint = scrollState?.mode === "manual" ? "ESC tail • ↑↓ scroll • " : "↑↓ scroll • ";
+    const modeHint = selectionState?.mode === "active" ? "ESC exit • ↑↓ select • " : "↑↓ select • ";
 
-    const controls = `${AnsiColors.dim}${scrollIndicator}${modeHint}+/- level • q quit • ${String(exchangeCount)}/${String(historyCapacity)} requests • ${storagePath}${AnsiColors.reset}`;
+    const controls = `${AnsiColors.dim}${selectionIndicator}${modeHint}+/- level • q quit • ${String(exchangeCount)}/${String(historyCapacity)} requests • ${storagePath}${AnsiColors.reset}`;
 
     // Truncate if too long
     const maxLen = regions.width - 1;
