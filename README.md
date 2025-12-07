@@ -56,10 +56,10 @@ Position httpSandwich between your client and server:
 
 ```bash
 # Natural language syntax (recommended)
-httpSandwich between 8000 and localhost:3000
+npx httpsandwich between 8000 and localhost:3000
 
 # Traditional flag syntax
-httpSandwich --from 8000 --to localhost:3000
+npx httpsandwich --from 8000 --to localhost:3000
 ```
 
 Now point your client to `localhost:8000` instead of `localhost:3000`. All traffic flows through httpSandwich and is displayed in real-time.
@@ -68,16 +68,16 @@ Now point your client to `localhost:8000` instead of `localhost:3000`. All traff
 
 ```bash
 # Monitor traffic to a local API server
-httpSandwich between 8080 and localhost:3000
+npx httpsandwich between 8080 and localhost:3000
 
 # Proxy to a remote service
-httpSandwich between 9000 and api.example.com:443
+npx httpsandwich between 9000 and api.example.com:443
 
 # Start with minimal output (dots only)
-httpSandwich between 8000 and 5009 --level 1
+npx httpsandwich between 8000 and 5009 --level 1
 
 # Keep more history in memory
-httpSandwich between 8000 and 5009 --history 500
+npx httpsandwich between 8000 and 5009 --history 500
 ```
 
 ## Interactive Controls
