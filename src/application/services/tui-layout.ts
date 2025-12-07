@@ -63,7 +63,7 @@ export class TuiLayout {
     this.terminal.moveCursor(regions.headerRow, 1);
     this.terminal.clearLine();
 
-    const header = `${AnsiColors.bold}httpSandwich${AnsiColors.reset} ${AnsiColors.dim}←${AnsiColors.reset} ${from.toString()} ${AnsiColors.dim}→${AnsiColors.reset} ${to.toString()}  ${AnsiColors.dim}[${level.toString()}]${AnsiColors.reset}`;
+    const header = `${AnsiColors.bold}httpSandwich${AnsiColors.reset} ${from.toString()} ${AnsiColors.dim}→${AnsiColors.reset} 🥪 ${AnsiColors.dim}→${AnsiColors.reset} ${to.toString()}  ${AnsiColors.dim}[${level.toString()}]${AnsiColors.reset}`;
     this.terminal.write(header);
   }
 
