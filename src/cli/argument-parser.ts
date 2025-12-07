@@ -18,10 +18,27 @@ export type ParseResult =
   | { readonly ok: false; readonly error: string };
 
 /**
+ * Check if a value is missing or looks like a flag.
+ * For dashed args, any value starting with "-" is considered a flag.
+ * For non-dashed args (between/and), we're more lenient.
+ */
+function isMissingValue(value: string | undefined, isDashedArg: boolean): boolean {
+  if (value === undefined) return true;
+  if (isDashedArg && value.startsWith("-")) return true;
+  // For non-dashed "and", the value could be a keyword we should not consume
+  if (!isDashedArg && (value === "and" || value === "between")) return true;
+  return false;
+}
+
+/**
  * Parse CLI arguments into a typed configuration.
  *
- * Expected format:
- *   httpSandwich --from <port> --to <host:port> [--level <1-6>] [--history <n>]
+ * Supported formats:
+ *   httpSandwich between <port> and <host:port> [options]
+ *   httpSandwich --between <port> --and <host:port> [options]
+ *   httpSandwich --from <port> --to <host:port> [options]
+ *
+ * All forms can be mixed (e.g., "between 8000 --and localhost:5009").
  *
  * @param args - Array of CLI arguments (typically process.argv.slice(2))
  */
@@ -35,26 +52,43 @@ export function parseArguments(args: readonly string[]): ParseResult {
     const arg = args[i];
     const nextArg = args[i + 1];
 
-    if (arg === "--from") {
-      if (nextArg === undefined || nextArg.startsWith("-")) {
-        return { ok: false, error: "Missing value for --from" };
+    // Handle "from" arguments: --from, --between, between
+    if (arg === "--from" || arg === "--between") {
+      if (isMissingValue(nextArg, true)) {
+        return { ok: false, error: `Missing value for ${arg}` };
       }
       fromValue = nextArg;
       i++; // Skip next arg since we consumed it
-    } else if (arg === "--to") {
-      if (nextArg === undefined || nextArg.startsWith("-")) {
-        return { ok: false, error: "Missing value for --to" };
+    } else if (arg === "between") {
+      if (isMissingValue(nextArg, false)) {
+        return { ok: false, error: "Missing value for between" };
+      }
+      fromValue = nextArg;
+      i++; // Skip next arg since we consumed it
+    }
+    // Handle "to" arguments: --to, --and, and
+    else if (arg === "--to" || arg === "--and") {
+      if (isMissingValue(nextArg, true)) {
+        return { ok: false, error: `Missing value for ${arg}` };
       }
       toValue = nextArg;
       i++; // Skip next arg since we consumed it
-    } else if (arg === "--level") {
-      if (nextArg === undefined || nextArg.startsWith("-")) {
+    } else if (arg === "and") {
+      if (isMissingValue(nextArg, false)) {
+        return { ok: false, error: "Missing value for and" };
+      }
+      toValue = nextArg;
+      i++; // Skip next arg since we consumed it
+    }
+    // Handle other options
+    else if (arg === "--level") {
+      if (isMissingValue(nextArg, true)) {
         return { ok: false, error: "Missing value for --level" };
       }
       levelValue = nextArg;
       i++; // Skip next arg since we consumed it
     } else if (arg === "--history") {
-      if (nextArg === undefined || nextArg.startsWith("-")) {
+      if (isMissingValue(nextArg, true)) {
         return { ok: false, error: "Missing value for --history" };
       }
       historyValue = nextArg;
@@ -63,11 +97,11 @@ export function parseArguments(args: readonly string[]): ParseResult {
   }
 
   if (fromValue === undefined) {
-    return { ok: false, error: "Missing required argument: --from <port>" };
+    return { ok: false, error: "Missing required argument: between <port> (or --from)" };
   }
 
   if (toValue === undefined) {
-    return { ok: false, error: "Missing required argument: --to <host:port>" };
+    return { ok: false, error: "Missing required argument: and <host:port> (or --to)" };
   }
 
   try {
@@ -111,11 +145,14 @@ export function parseArguments(args: readonly string[]): ParseResult {
  * Get usage help text.
  */
 export function getUsage(): string {
-  return `Usage: httpSandwich --from <port> --to <host:port> [options]
+  return `Usage: httpSandwich between <port> and <host:port> [options]
+       httpSandwich --from <port> --to <host:port> [options]
+
+Arguments:
+  between, --from, --between <port>     Local port to listen on (required)
+  and, --to, --and <host:port>          Target address to proxy to (required)
 
 Options:
-  --from <port>       Local port to listen on (required)
-  --to <host:port>    Target address to proxy requests to (required)
   --level <1-6>       Starting detail level (default: 3)
   --history <n>       Max requests to keep in history (default: 100)
 
@@ -133,7 +170,7 @@ Interactive Controls:
   q    Quit
 
 Examples:
-  httpSandwich --from 8000 --to 5009
-  httpSandwich --from 8000 --to localhost:5009 --level 1
+  httpSandwich between 8000 and 5009
+  httpSandwich between 8000 and localhost:5009 --level 1
   httpSandwich --from 8000 --to 192.168.1.5:80 --history 50`;
 }
