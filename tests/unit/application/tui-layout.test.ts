@@ -149,9 +149,12 @@ describe("TuiLayout", () => {
       // Written text should be truncated
       const written = terminal.writtenText.find((t) => t.includes("A"));
       expect(written).toBeDefined();
-      // Should be truncated to fit width
+      // Should be truncated to fit width (check visible length, not raw length with ANSI codes)
       if (written !== undefined) {
-        expect(written.length).toBeLessThanOrEqual(20);
+        const visibleLength = written.replace(/\x1b\[[0-9;]*m/g, "").length;
+        expect(visibleLength).toBeLessThanOrEqual(20);
+        // Should end with "..."
+        expect(written).toContain("...");
       }
     });
   });

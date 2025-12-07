@@ -85,13 +85,11 @@ export class ScreenRenderer {
 
   /**
    * Set the detail level and redraw.
+   * Selection is preserved across level changes to allow investigating a selected item at different detail levels.
    */
   public setLevel(level: DetailLevel): void {
     if (!this.currentLevel.equals(level)) {
       this.currentLevel = level;
-      // Reset selection when level changes (content structure changes)
-      this.selectionMode = "none";
-      this.selectedIndex = null;
       this.redraw();
     }
   }

@@ -141,19 +141,54 @@ export class TuiLayout {
 
   /**
    * Truncate text to fit within a given width.
-   * Accounts for ANSI escape codes (they don't take visual space).
+   * Preserves ANSI escape codes (they don't take visual space).
    */
   private truncateToWidth(text: string, maxWidth: number): string {
+    // ANSI escape sequence pattern
+    const ansiPattern = /\x1b\[[0-9;]*m/g;
+
     // Strip ANSI codes to count visible characters
-    const stripped = text.replace(/\x1b\[[0-9;]*m/g, "");
+    const stripped = text.replace(ansiPattern, "");
 
     if (stripped.length <= maxWidth) {
       return text;
     }
 
-    // Need to truncate - this is complex with ANSI codes
-    // For simplicity, just truncate the stripped version and lose formatting
-    // A more sophisticated approach would preserve codes
-    return stripped.substring(0, maxWidth - 3) + "...";
+    // Need to truncate while preserving ANSI codes
+    const targetVisibleLength = maxWidth - 3; // Leave room for "..."
+    let result = "";
+    let visibleCount = 0;
+    let i = 0;
+
+    while (i < text.length && visibleCount < targetVisibleLength) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      // Check if we're at an ANSI escape sequence
+      if (char === "\x1b" && nextChar === "[") {
+        // Find end of escape sequence
+        let j = i + 2;
+        while (j < text.length && text[j] !== "m") {
+          j++;
+        }
+        // Include the 'm'
+        if (j < text.length) {
+          j++;
+        }
+        // Add the entire escape sequence (doesn't count as visible)
+        result += text.substring(i, j);
+        i = j;
+      } else if (char !== undefined) {
+        // Regular visible character
+        result += char;
+        visibleCount++;
+        i++;
+      } else {
+        break;
+      }
+    }
+
+    // Add ellipsis and reset code to ensure formatting doesn't bleed
+    return result + "..." + AnsiColors.reset;
   }
 }

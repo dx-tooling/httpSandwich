@@ -348,13 +348,16 @@ describe("ScreenRenderer", () => {
       expect(state.selectedItem).toBe(29); // 1-indexed display value
     });
 
-    it("should reset selection when detail level changes", () => {
-      renderer.selectUp();
-      renderer.selectUp();
+    it("should persist selection when detail level changes", () => {
+      renderer.selectUp(); // Select last item (29)
+      renderer.selectUp(); // Move to 28
       expect(renderer.isSelectionActive()).toBe(true);
+      expect(renderer.getSelectedIndex()).toBe(28);
 
       renderer.incrementLevel();
-      expect(renderer.isSelectionActive()).toBe(false);
+      // Selection should persist across level changes
+      expect(renderer.isSelectionActive()).toBe(true);
+      expect(renderer.getSelectedIndex()).toBe(28);
     });
 
     it("should highlight selected item with inverted colors", () => {
