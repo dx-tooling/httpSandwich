@@ -21,7 +21,7 @@ export type ParseResult =
  * Parse CLI arguments into a typed configuration.
  *
  * Expected format:
- *   malcolm --from <port> --to <host:port> [--level <1-6>] [--history <n>]
+ *   httpSandwich --from <port> --to <host:port> [--level <1-6>] [--history <n>]
  *
  * @param args - Array of CLI arguments (typically process.argv.slice(2))
  */
@@ -111,7 +111,7 @@ export function parseArguments(args: readonly string[]): ParseResult {
  * Get usage help text.
  */
 export function getUsage(): string {
-  return `Usage: malcolm --from <port> --to <host:port> [options]
+  return `Usage: httpSandwich --from <port> --to <host:port> [options]
 
 Options:
   --from <port>       Local port to listen on (required)
@@ -133,7 +133,7 @@ Interactive Controls:
   q    Quit
 
 Examples:
-  malcolm --from 8000 --to 5009
-  malcolm --from 8000 --to localhost:5009 --level 1
-  malcolm --from 8000 --to 192.168.1.5:80 --history 50`;
+  httpSandwich --from 8000 --to 5009
+  httpSandwich --from 8000 --to localhost:5009 --level 1
+  httpSandwich --from 8000 --to 192.168.1.5:80 --history 50`;
 }

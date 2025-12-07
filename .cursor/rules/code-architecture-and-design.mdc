@@ -1,5 +1,5 @@
 ---
-description: Architecture and design principles for the Malcolm codebase
+description: Architecture and design principles for the httpSandwich codebase
 globs:
   - "src/**/*.ts"
 alwaysApply: false
@@ -7,7 +7,7 @@ alwaysApply: false
 
 # Code Architecture and Design
 
-Malcolm follows a **Clean Architecture** pattern with strict separation of concerns and dependency inversion.
+httpSandwich follows a **Clean Architecture** pattern with strict separation of concerns and dependency inversion.
 
 ## Layer Structure
 

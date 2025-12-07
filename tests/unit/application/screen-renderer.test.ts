@@ -125,7 +125,7 @@ describe("ScreenRenderer", () => {
       renderer.initialize();
 
       const allText = terminal.writtenText.join("");
-      expect(allText).toContain("Malcolm");
+      expect(allText).toContain("httpSandwich");
       expect(allText).toContain("8000");
       expect(allText).toContain("localhost:5009");
     });

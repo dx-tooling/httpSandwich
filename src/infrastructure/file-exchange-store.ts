@@ -6,7 +6,7 @@ import { type HttpExchange } from "@/domain";
 
 /**
  * Exchange store implementation that writes to JSON files.
- * Files are stored in the system temp directory under malcolm/{sessionId}/.
+ * Files are stored in the system temp directory under httpSandwich/{sessionId}/.
  */
 export class FileExchangeStore implements ExchangeStore {
   private readonly storageDir: string;
@@ -14,7 +14,7 @@ export class FileExchangeStore implements ExchangeStore {
 
   public constructor(sessionId?: string) {
     const session = sessionId ?? generateSessionId();
-    this.storageDir = join(tmpdir(), "malcolm", session);
+    this.storageDir = join(tmpdir(), "httpSandwich", session);
   }
 
   /**

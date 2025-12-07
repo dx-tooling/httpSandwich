@@ -1,13 +1,13 @@
 {
-  "name": "malcolm",
+  "name": "httpsandwich",
   "version": "0.0.1",
-  "description": "Malcolm - HTTP monitor-in-the-middle. A transparent proxy for monitoring HTTP traffic between client and server.",
+  "description": "httpSandwich - HTTP monitor-in-the-middle. A transparent proxy for monitoring HTTP traffic between client and server.",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
   },
   "bin": {
-    "malcolm": "./dist/cli/main.js"
+    "httpSandwich": "./dist/cli/main.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

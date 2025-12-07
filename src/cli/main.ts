@@ -1,5 +1,5 @@
 /**
- * Malcolm - HTTP monitor-in-the-middle
+ * httpSandwich - HTTP monitor-in-the-middle
  *
  * Entry point for the CLI application.
  */
@@ -64,7 +64,7 @@ async function main(): Promise<void> {
     keyboard.stop();
     terminal.showCursor();
     terminal.exitAlternateScreen();
-    console.log("Malcolm stopped.");
+    console.log("httpSandwich stopped.");
     await server.stop();
     process.exit(0);
   };

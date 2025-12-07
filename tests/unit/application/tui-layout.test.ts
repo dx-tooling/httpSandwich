@@ -68,7 +68,7 @@ describe("TuiLayout", () => {
 
       // Should have written something containing the addresses
       const headerContent = terminal.writtenText.join("");
-      expect(headerContent).toContain("Malcolm");
+      expect(headerContent).toContain("httpSandwich");
       expect(headerContent).toContain("8080");
       expect(headerContent).toContain("api.example.com:443");
       expect(headerContent).toContain("Level 5");
@@ -79,7 +79,7 @@ describe("TuiLayout", () => {
     it("should render footer at last row", () => {
       terminal.setSize(24, 80);
 
-      layout.renderFooter(42, 100, "/tmp/malcolm-exchanges");
+      layout.renderFooter(42, 100, "/tmp/httpSandwich-exchanges");
 
       expect(terminal.operations).toContain("moveCursor(24,1)");
       expect(terminal.operations).toContain("clearLine@24");
@@ -98,7 +98,7 @@ describe("TuiLayout", () => {
     it("should truncate long storage paths", () => {
       terminal.setSize(24, 40);
 
-      const longPath = "/very/long/path/to/malcolm/exchanges/storage";
+      const longPath = "/very/long/path/to/httpSandwich/exchanges/storage";
       layout.renderFooter(1, 100, longPath);
 
       const footerContent = terminal.writtenText.join("");

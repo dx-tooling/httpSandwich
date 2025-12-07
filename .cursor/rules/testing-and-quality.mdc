@@ -1,5 +1,5 @@
 ---
-description: Testing strategies and quality standards for the Malcolm codebase
+description: Testing strategies and quality standards for the httpSandwich codebase
 globs:
   - "tests/**/*.ts"
   - "src/**/*.ts"
@@ -8,7 +8,7 @@ alwaysApply: false
 
 # Testing and Quality
 
-Malcolm uses **Vitest** for testing with a focus on isolated unit tests and meaningful integration tests.
+httpSandwich uses **Vitest** for testing with a focus on isolated unit tests and meaningful integration tests.
 
 ## Test Structure
 

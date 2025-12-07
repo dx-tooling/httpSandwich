@@ -1,4 +1,4 @@
-# Malcolm Project Setup
+# httpSandwich Project Setup
 
 ## Core Tooling Stack
 
@@ -88,7 +88,7 @@ tests/
 
 Minimal placeholder files to validate the setup works:
 
-- `src/cli/main.ts` - Entry point with simple "Malcolm starting" log
+- `src/cli/main.ts` - Entry point with simple "httpSandwich starting" log
 - `src/domain/index.ts` - Empty barrel export
 - `src/application/index.ts` - Empty barrel export
 - `src/infrastructure/index.ts` - Empty barrel export
