@@ -1,10 +1,10 @@
 {
   "name": "httpsandwich",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "httpSandwich - HTTP monitor-in-the-middle. A transparent proxy for monitoring HTTP traffic between client and server.",
   "type": "module",
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=20.0.0"
   },
   "bin": {
     "httpSandwich": "./dist/cli/main.js"
@@ -23,7 +23,7 @@
   "scripts": {
     "start": "tsx src/cli/main.ts",
     "dev": "tsx watch src/cli/main.ts",
-    "build": "tsc",
+    "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -33,18 +33,35 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "quality": "npm run lint:check && npm run format:check && npm run typecheck && npm run test",
-    "quality:fix": "npm run lint && npm run format && npm run typecheck"
+    "quality:fix": "npm run lint && npm run format && npm run typecheck",
+    "prepublishOnly": "npm run quality && npm run build"
   },
   "keywords": [
+    "cli",
     "debugging",
+    "developer-tools",
+    "devtools",
     "http",
+    "http-proxy",
+    "inspector",
     "man-in-the-middle",
     "mitm",
     "monitor",
-    "proxy"
+    "network",
+    "proxy",
+    "traffic",
+    "tui"
   ],
-  "author": "",
+  "author": "Manuel Kießling <manuel@kiessling.net>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dx-tooling/httpSandwich.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dx-tooling/httpSandwich/issues"
+  },
+  "homepage": "https://github.com/dx-tooling/httpSandwich#readme",
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
@@ -53,6 +70,7 @@
     "eslint-plugin-jsonc": "^2.21.0",
     "eslint-plugin-yml": "^1.19.0",
     "prettier": "^3.7.4",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",
