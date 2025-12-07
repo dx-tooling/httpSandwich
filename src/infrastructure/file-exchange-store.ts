@@ -42,6 +42,21 @@ export class FileExchangeStore implements ExchangeStore {
   }
 
   /**
+   * Save an HTML file for an exchange.
+   * Returns the full file path.
+   */
+  public async saveHtml(exchangeId: string, html: string): Promise<string> {
+    if (!this.initialized) {
+      await this.ensureStorageDir();
+      this.initialized = true;
+    }
+
+    const filePath = join(this.storageDir, `${exchangeId}.html`);
+    await writeFile(filePath, html, "utf-8");
+    return filePath;
+  }
+
+  /**
    * Ensure the storage directory exists.
    */
   private async ensureStorageDir(): Promise<void> {

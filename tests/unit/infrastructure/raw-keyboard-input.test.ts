@@ -25,4 +25,8 @@ describe("NormalizedKeys", () => {
   it("should have ESCAPE key", () => {
     expect(NormalizedKeys.ESCAPE).toBe("escape");
   });
+
+  it("should have INSPECT key", () => {
+    expect(NormalizedKeys.INSPECT).toBe("inspect");
+  });
 });

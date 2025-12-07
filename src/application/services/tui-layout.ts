@@ -88,7 +88,8 @@ export class TuiLayout {
     }
 
     // Build controls hint based on mode
-    const modeHint = selectionState?.mode === "active" ? "ESC exit • ↑↓ select • " : "↑↓ select • ";
+    const modeHint =
+      selectionState?.mode === "active" ? "ESC exit • ↑↓ select • i inspect • " : "↑↓ select • ";
 
     const controls = `${AnsiColors.dim}${selectionIndicator}${modeHint}+/- level • q quit • ${String(exchangeCount)}/${String(historyCapacity)} requests • ${storagePath}${AnsiColors.reset}`;
 

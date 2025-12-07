@@ -16,3 +16,4 @@ export { AnsiTerminalUI } from "./ansi-terminal-ui.js";
 export { RawKeyboardInput, NormalizedKeys, type NormalizedKey } from "./raw-keyboard-input.js";
 export { FileExchangeStore } from "./file-exchange-store.js";
 export { AnsiColors, getColorForCategory, colorize } from "./color-scheme.js";
+export { openBrowser } from "./browser-opener.js";

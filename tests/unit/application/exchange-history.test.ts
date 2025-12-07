@@ -161,4 +161,34 @@ describe("ExchangeHistory", () => {
       expect(history.getAll()).toHaveLength(0);
     });
   });
+
+  describe("getByIndex", () => {
+    it("should return exchange at specified index", () => {
+      const history = new ExchangeHistory();
+
+      history.add(createMockExchange("a"));
+      history.add(createMockExchange("b"));
+      history.add(createMockExchange("c"));
+
+      expect(history.getByIndex(0)?.id).toBe("a");
+      expect(history.getByIndex(1)?.id).toBe("b");
+      expect(history.getByIndex(2)?.id).toBe("c");
+    });
+
+    it("should return undefined for out-of-bounds index", () => {
+      const history = new ExchangeHistory();
+
+      history.add(createMockExchange("1"));
+
+      expect(history.getByIndex(-1)).toBeUndefined();
+      expect(history.getByIndex(1)).toBeUndefined();
+      expect(history.getByIndex(100)).toBeUndefined();
+    });
+
+    it("should return undefined for empty history", () => {
+      const history = new ExchangeHistory();
+
+      expect(history.getByIndex(0)).toBeUndefined();
+    });
+  });
 });

@@ -12,6 +12,8 @@ const KEYS = {
   UNDERSCORE: "_", // Also treated as minus (same key with shift)
   Q_LOWER: "q",
   Q_UPPER: "Q",
+  I_LOWER: "i",
+  I_UPPER: "I",
   // Arrow keys send ANSI escape sequences
   ARROW_UP: "\x1b[A",
   ARROW_DOWN: "\x1b[B",
@@ -27,6 +29,7 @@ export const NormalizedKeys = {
   SCROLL_UP: "scroll_up",
   SCROLL_DOWN: "scroll_down",
   ESCAPE: "escape",
+  INSPECT: "inspect",
 } as const;
 
 export type NormalizedKey = (typeof NormalizedKeys)[keyof typeof NormalizedKeys];
@@ -116,6 +119,10 @@ export class RawKeyboardInput implements KeyboardInput {
 
       case KEYS.ESCAPE:
         return NormalizedKeys.ESCAPE;
+
+      case KEYS.I_LOWER:
+      case KEYS.I_UPPER:
+        return NormalizedKeys.INSPECT;
 
       default:
         return null;

@@ -167,6 +167,9 @@ Detail Levels:
 Interactive Controls:
   +/=  Increase detail level
   -/_  Decrease detail level
+  ↑/↓  Select item
+  i    Inspect selected item in browser
+  ESC  Exit selection mode
   q    Quit
 
 Examples:

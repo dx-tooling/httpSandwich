@@ -26,3 +26,4 @@ export {
   type ScrollState,
 } from "./services/screen-renderer.js";
 export { TuiLayout, type LayoutRegions } from "./services/tui-layout.js";
+export { generateExchangeHtml } from "./services/exchange-html-generator.js";

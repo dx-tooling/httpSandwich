@@ -52,6 +52,13 @@ export class ExchangeHistory {
   }
 
   /**
+   * Get an exchange by its index (0-indexed).
+   */
+  public getByIndex(index: number): HttpExchange | undefined {
+    return this.exchanges[index];
+  }
+
+  /**
    * Get the number of exchanges in history.
    */
   public size(): number {

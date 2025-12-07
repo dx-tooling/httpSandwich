@@ -5,13 +5,14 @@
  */
 
 import { parseArguments, getUsage } from "./argument-parser.js";
-import { ExchangeHistory, ScreenRenderer, TuiLayout } from "@/application";
+import { ExchangeHistory, ScreenRenderer, TuiLayout, generateExchangeHtml } from "@/application";
 import {
   HttpProxyServer,
   AnsiTerminalUI,
   RawKeyboardInput,
   NormalizedKeys,
   FileExchangeStore,
+  openBrowser,
 } from "@/infrastructure";
 
 async function main(): Promise<void> {
@@ -86,6 +87,20 @@ async function main(): Promise<void> {
         break;
       case NormalizedKeys.ESCAPE:
         renderer.resetScroll();
+        break;
+      case NormalizedKeys.INSPECT:
+        if (renderer.isSelectionActive()) {
+          const index = renderer.getSelectedIndex();
+          if (index !== null) {
+            const exchange = history.getByIndex(index);
+            if (exchange !== undefined) {
+              const html = generateExchangeHtml(exchange);
+              void store.saveHtml(exchange.id, html).then((filePath) => {
+                void openBrowser(`file://${filePath}`);
+              });
+            }
+          }
+        }
         break;
       case NormalizedKeys.QUIT:
         void shutdown();
